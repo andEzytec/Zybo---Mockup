@@ -370,7 +370,7 @@ export default function App() {
     clearInteractiveElements();
     addMessage('user', 'Daviplata');
     await typeMessage('bot',
-      `Al activar pagos por Daviplata, se realizarán de forma automática por el valor del parqueo más $500 + IVA por la transacción.`,
+      `Al activar pagos por Daviplata, se realizarán de forma automática por el valor del parqueo más $799 + IVA por la transacción.`,
       900
     );
     setTimeout(async () => {
