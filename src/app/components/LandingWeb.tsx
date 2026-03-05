@@ -169,7 +169,7 @@ export function LandingWebScreen({
   onSubmit: (data: LandingFormData) => void;
 }) {
 
-  const [step, setStep] = useState<"hero" | "form" | "AddSecon_user" | "submitting">("hero");
+  const [step, setStep] = useState< "form" | "AddSecon_user" | "submitting">("form");
 
   const [extraPhones, setExtraPhones] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -260,7 +260,7 @@ export function LandingWebScreen({
       </div>
 
       {/* HERO */}
-      {step === "hero" && (
+      {/* {step === "hero" && (
         <div className="px-5 py-8">
           <img
             src="https://i.postimg.cc/NG2q2tCm/Zybo-logo-hor-morado-amarillo.png"
@@ -269,11 +269,9 @@ export function LandingWebScreen({
           />
 
           <h1 className="text-2xl font-extrabold text-gray-900 leading-tight mt-6">
-            Paga tu parqueo sin filas.
+           Boton para canales de registro externos
           </h1>
-          <p className="text-gray-600 mt-1 text-sm leading-relaxed">
-            Regístrate y paga desde tu celular. Sin efectivo, sin tiquetes, sin demoras.
-          </p>
+          
 
           <button
             onClick={() => setStep("form")}
@@ -282,28 +280,9 @@ export function LandingWebScreen({
             Comenzar
           </button>
 
-          <div className="mt-10 space-y-4">
-            <div className="rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="font-bold text-gray-900">✅ Registro en 1 minuto</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Crea tu cuenta y vincula tu método de pago de forma segura.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="font-bold text-gray-900">🚗 Entrada automática</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Olvida el tiquete. Todo queda registrado.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="font-bold text-gray-900">💳 Pago sin cajeros</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Paga desde tu celular y sal sin hacer fila.
-              </p>
-            </div>
-          </div>
+          
         </div>
-      )}
+      )} */}
 
       {/* FORM */}
       {step === "form" && (
