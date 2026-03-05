@@ -260,7 +260,7 @@ export function LandingWebScreen({
       </div>
 
       {/* HERO */}
-      {step === "hero" && (
+      {/* {step === "hero" && (
         <div className="px-5 py-8">
           <img
             src="https://i.postimg.cc/NG2q2tCm/Zybo-logo-hor-morado-amarillo.png"
@@ -303,7 +303,7 @@ export function LandingWebScreen({
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* FORM */}
       {step === "form" && (
