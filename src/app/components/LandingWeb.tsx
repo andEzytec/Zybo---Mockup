@@ -1,4 +1,3 @@
-
 import { useMemo, useRef, useState } from "react";
 
 type LandingFormData = {
@@ -174,6 +173,7 @@ export function LandingWebScreen({
   const [extraPhones, setExtraPhones] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedDataPolicy, setAcceptedDataPolicy] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
 
 
@@ -437,29 +437,55 @@ export function LandingWebScreen({
               )}
             </div>
 
-            <div className="mt-6 flex items-start gap-2">
-              <input
-                type="checkbox"
-                checked={acceptedTerms}
-                onChange={(e) => setAcceptedTerms(e.target.checked)}
-                className="mt-1 h-4 w-4 accent-[#febd47]"
-              />
-              <p className="text-xs text-[#8800ff]">
-                <button
-                  type="button"
-                  className="text-[#8800ff] font-semibold underline underline-offset-2"
-                  onClick={() => setIsTermsOpen(true)}
-                >
-                  Conocer términos y condiciones
-                </button>
-              </p>
+            {/* Checkboxes - Política de Datos y Términos */}
+            <div className="mt-6 space-y-3">
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={acceptedDataPolicy}
+                  onChange={(e) => setAcceptedDataPolicy(e.target.checked)}
+                  className="mt-1 h-4 w-4 accent-[#febd47]"
+                />
+                <label className="text-xs text-[#8800ff] leading-relaxed">
+                  Autorizo a E-Global Technology S.A.S. el tratamiento de mis datos personales, conforme a la{" "}
+                  <a 
+                    href="https://zybo.co/wp-content/uploads/2025/07/Politica-Tratamiento-de-Datos-Personales-Egobaltechnologysas.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold underline underline-offset-2 hover:opacity-80"
+                  >
+                    Política de Tratamiento de Datos Personales.
+                  </a>
+                </label>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 accent-[#febd47]"
+                />
+                <label className="text-xs text-[#8800ff] leading-relaxed">
+                  He leído y acepto los{" "}
+                  <a 
+                    href="https://zybo.co/tyc/zybo260223.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold underline underline-offset-2 hover:opacity-80"
+                  >
+                    Términos y Condiciones de Zybo.
+                  </a>
+                </label>
+              </div>
             </div>
 
             <div className="pt-2 flex gap-3">
 
               <button
                 onClick={() => setStep("AddSecon_user")}
-                className=" py-3 rounded-xl bg-[#8800ff] text-white font-semibold w-full"
+                disabled={!acceptedTerms || !acceptedDataPolicy}
+                className=" py-3 rounded-xl bg-[#8800ff] text-white font-semibold w-full disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continuar
               </button>
