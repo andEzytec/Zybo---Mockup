@@ -5,8 +5,16 @@ import { ChatButtonGroup } from './components/ChatButtonGroup';
 import { MenuList } from './components/MenuList';
 import { PaymentSelector } from './components/PaymentSelector';
 import { FormModal, FormData } from './components/FormModal';
+import { BottomSheet } from './components/BottomSheet';
 import { Phone, Video, MoreVertical, RefreshCw } from 'lucide-react';
 import { LandingWebScreen } from './components/LandingWeb';
+
+type SheetOption = { id: string; label: string; description?: string; action: string };
+type ActiveSheet = {
+  title: string;
+  options: SheetOption[];
+  onSelect: (action: string) => void;
+} | null;
 
 
 
@@ -96,23 +104,19 @@ type FlowStep =
   | 'mc_usr_invite_name_wait'
   | 'idle';
 
-type VehicleRole = 'principal' | 'secundario' | 'autorizado' | 'mensualista';
+type VehicleRole = 'principal' | 'secundario';
 type Vehicle = { plate: string; role: VehicleRole; status: string; active: boolean };
-type UserType = 'principal' | 'secundario' | 'autorizado' | 'mensualista';
-type UserEntry = { id: string; name: string; phone: string; type: UserType; active: boolean };
+type UserType = 'principal' | 'secundario';
+type UserEntry = { id: string; name: string; phone: string; type: UserType; active: boolean; vehiclePlate: string };
 
 const ROLE_LABEL: Record<VehicleRole, string> = {
   principal: 'Principal',
   secundario: 'Secundario',
-  autorizado: 'Autorizado',
-  mensualista: 'Mensualista',
 };
 
 const USER_TYPE_LABEL: Record<UserType, string> = {
   principal: 'Principal (propietario)',
   secundario: 'Secundario',
-  autorizado: 'Autorizado',
-  mensualista: 'Mensualista',
 };
 
 
@@ -148,17 +152,25 @@ export default function App() {
   const [miCuentaOrigin, setMiCuentaOrigin] = useState<'ep' | 're' | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([
     { plate: 'ABC123', role: 'principal', status: 'Débito automático activo', active: true },
-    { plate: 'XYZ789', role: 'autorizado', status: 'Autorizado por CC Andino', active: true },
-    { plate: 'DEF456', role: 'mensualista', status: 'Mensualidad vigente hasta 30/abr', active: true },
+    { plate: 'XYZ789', role: 'secundario', status: 'Principal: María López', active: true },
   ]);
   const [users, setUsers] = useState<UserEntry[]>([
-    { id: 'u1', name: 'Carlos Pérez', phone: '300 123 4567', type: 'principal', active: true },
-    { id: 'u2', name: 'Ana Gómez', phone: '301 234 5678', type: 'secundario', active: true },
-    { id: 'u3', name: 'Luis Ruiz', phone: '302 345 6789', type: 'secundario', active: false },
-    { id: 'u4', name: 'Pedro Torres', phone: '303 456 7890', type: 'autorizado', active: true },
-    { id: 'u5', name: 'María López', phone: '304 567 8901', type: 'mensualista', active: true },
+    { id: 'u2', name: 'Ana Gómez', phone: '301 234 5678', type: 'secundario', active: true, vehiclePlate: 'ABC123' },
+    { id: 'u3', name: 'Luis Ruiz', phone: '302 345 6789', type: 'secundario', active: false, vehiclePlate: 'ABC123' },
   ]);
   const [invitePhone, setInvitePhone] = useState<string>('');
+  const [activeSheet, setActiveSheet] = useState<ActiveSheet>(null);
+
+  function openSheet(config: NonNullable<ActiveSheet>) {
+    setActiveSheet({
+      title: config.title,
+      options: config.options,
+      onSelect: (action) => {
+        setActiveSheet(null);
+        config.onSelect(action);
+      },
+    });
+  }
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -825,13 +837,17 @@ async function handleOwnerOtp(value: string) {
     setMiCuentaOrigin(origin);
     setCurrentStep('mc_menu');
     addMessage('user', 'Mi cuenta');
+    const hasPrincipalVehicle = vehicles.some(v => v.role === 'principal' && v.active);
     setTimeout(async () => {
-      await typeMessage('bot', '👤 Bienvenido a *Mi cuenta*. ¿Qué quieres administrar?', 700);
-      addMenuList('Mi cuenta', [
-        { id: 'vehiculos', label: '🚗 Mis vehículos', action: 'mc_vehiculos', description: 'Ver, agregar o desvincular placas asociadas.' },
-        { id: 'usuarios', label: '👥 Mis usuarios', action: 'mc_usuarios', description: 'Invita o gestiona usuarios adicionales de tu vehículo.' },
-        { id: 'volver', label: '⬅️ Volver', action: 'mc_volver', description: 'Regresar al menú anterior.' },
-      ]);
+      await typeMessage('bot', 'Bienvenido a Mi cuenta. ¿Qué quieres administrar?', 700);
+      const options = [
+        { id: 'vehiculos', label: 'Mis vehículos', action: 'mc_vehiculos', description: 'Vehículos a los que estás asociado.' },
+      ];
+      if (hasPrincipalVehicle) {
+        options.push({ id: 'usuarios', label: 'Mis usuarios', action: 'mc_usuarios', description: 'Usuarios secundarios de tu vehículo principal.' });
+      }
+      options.push({ id: 'volver', label: 'Volver', action: 'mc_volver', description: 'Regresar al menú anterior.' });
+      addMenuList('Mi cuenta', options);
     }, 300);
   }
 
@@ -854,7 +870,7 @@ async function handleOwnerOtp(value: string) {
       if (activos.length === 0) {
         await typeMessage('bot', 'No tienes vehículos activos asociados.', 700);
       } else {
-        await typeMessage('bot', '🚗 Placas asociadas a tu cuenta:', 700);
+        await typeMessage('bot', 'Vehículos a los que estás asociado:', 700);
         addMenuList('Mis vehículos', activos.map(v => ({
           id: v.plate,
           label: `${v.plate} — ${ROLE_LABEL[v.role]}`,
@@ -864,8 +880,8 @@ async function handleOwnerOtp(value: string) {
       }
       setTimeout(() => {
         addButtonGroup([
-          { label: '➕ Agregar vehículo', action: 'mc_veh_add' },
-          { label: '⬅️ Volver a Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
+          { label: 'Agregar vehículo', action: 'mc_veh_add' },
+          { label: 'Volver a Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
         ]);
       }, 400);
     }, 300);
@@ -879,13 +895,12 @@ async function handleOwnerOtp(value: string) {
     setCurrentStep('mc_veh_detail');
     setTimeout(async () => {
       await typeMessage('bot',
-        `🚗 *${v.plate}*\nRol: ${ROLE_LABEL[v.role]}\nEstado: ${v.status}`,
+        `${v.plate}\nRol: ${ROLE_LABEL[v.role]}\nEstado: ${v.status}`,
         700
       );
       const btns: Array<{ label: string; action: string; variant?: 'primary' | 'secondary' }> = [];
-      if (v.role !== 'principal') btns.push({ label: '⭐ Marcar como principal', action: `mc_veh_principal:${plate}` });
-      btns.push({ label: '🔕 Desvincular placa', action: `mc_veh_remove:${plate}`, variant: 'secondary' });
-      btns.push({ label: '⬅️ Volver', action: 'mc_vehiculos', variant: 'secondary' });
+      btns.push({ label: 'Desvincular placa', action: `mc_veh_remove:${plate}`, variant: 'secondary' });
+      btns.push({ label: 'Volver', action: 'mc_vehiculos', variant: 'secondary' });
       addButtonGroup(btns);
     }, 300);
   }
@@ -894,18 +909,18 @@ async function handleOwnerOtp(value: string) {
     clearInteractiveElements();
     addMessage('user', 'Agregar vehículo');
     setCurrentStep('mc_veh_add_wait');
-    await typeMessage('bot', '📝 Escribe la placa del vehículo que quieres asociar (ej. ABC123).\n\n_Demo: usa *NEW001* para éxito, *NEW002* para OTP al propietario, *NEW003* para simular caída del RUNT._', 800);
+    await typeMessage('bot', 'Escribe la placa del vehículo que quieres asociar (ej. ABC123).\n\nDemo: usa NEW001 para éxito, NEW002 para OTP al propietario, NEW003 para simular caída del RUNT.', 800);
     setIsWaitingForInput(true);
   }
 
   async function handleAddVehicleInput(rawPlate: string) {
     setIsWaitingForInput(false);
     const plate = rawPlate.toUpperCase().replace(/\s+/g, '');
-    await typeMessage('bot', `🔄 Validando placa *${plate}* con RUNT (consulta asíncrona con reintentos)...`, 1500);
+    await typeMessage('bot', `Validando placa ${plate} con RUNT (consulta asíncrona con reintentos)...`, 1500);
 
     if (plate === 'NEW002') {
       await typeMessage('bot',
-        `⚠️ El vehículo *${plate}* ya tiene un usuario principal.\n\nEnviamos un OTP al celular del propietario para autorizar la asociación. Ingresa el código recibido.`,
+        `El vehículo ${plate} ya tiene un usuario principal.\n\nEnviamos un OTP al celular del propietario para autorizar la asociación. Ingresa el código recibido.`,
         1000
       );
       setCurrentStep('reg_owner_otp_wait');
@@ -914,20 +929,20 @@ async function handleOwnerOtp(value: string) {
     }
 
     if (plate === 'NEW003') {
-      await typeMessage('bot', '⚠️ El RUNT no respondió luego de varios reintentos. Por favor intenta más tarde.', 900);
+      await typeMessage('bot', 'El RUNT no respondió luego de varios reintentos. Por favor intenta más tarde.', 900);
     } else if (vehicles.some(v => v.plate === plate)) {
-      await typeMessage('bot', `ℹ️ La placa *${plate}* ya está asociada a tu cuenta.`, 900);
+      await typeMessage('bot', `La placa ${plate} ya está asociada a tu cuenta.`, 900);
     } else if (plate === 'NEW001' || /^[A-Z]{3}\d{3}$/.test(plate)) {
       setVehicles(prev => [...prev, { plate, role: 'secundario', status: 'Validado con RUNT', active: true }]);
-      await typeMessage('bot', `✅ *${plate}* fue validada en el RUNT y asociada a tu cuenta.`, 900);
+      await typeMessage('bot', `${plate} fue validada en el RUNT y asociada a tu cuenta.`, 900);
     } else {
-      await typeMessage('bot', `❌ La placa *${plate}* no aparece en el RUNT o no estás autorizado.`, 900);
+      await typeMessage('bot', `La placa ${plate} no aparece en el RUNT o no estás autorizado.`, 900);
     }
 
     setTimeout(() => {
       addButtonGroup([
-        { label: '🚗 Ver mis vehículos', action: 'mc_vehiculos' },
-        { label: '⬅️ Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
+        { label: 'Ver mis vehículos', action: 'mc_vehiculos' },
+        { label: 'Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
       ]);
     }, 400);
   }
@@ -938,10 +953,10 @@ async function handleOwnerOtp(value: string) {
     setCurrentStep('mc_veh_remove_confirm');
     setTimeout(async () => {
       await typeMessage('bot',
-        `⚠️ ¿Seguro que deseas desvincular la placa *${plate}*?\n\nPor normativa (Superintendencia de Industria y Comercio), el registro no se elimina: solo se marca como inactivo y puede reactivarse después.`,
+        `¿Seguro que deseas desvincular la placa ${plate}?\n\nPor normativa (Superintendencia de Industria y Comercio), el registro no se elimina: solo se marca como inactivo y puede reactivarse después.`,
         1000
       );
-      showTooltip('🐞 Bug conocido: al desvincular, el sistema aún no elimina correctamente las entradas/salidas históricas del vehículo.', 6000);
+      showTooltip('Bug conocido: al desvincular, el sistema aún no elimina correctamente las entradas/salidas históricas del vehículo.', 6000);
       addButtonGroup([
         { label: 'Sí, desvincular', action: `mc_veh_remove_ok:${plate}` },
         { label: 'Cancelar', action: 'mc_vehiculos', variant: 'secondary' },
@@ -953,27 +968,11 @@ async function handleOwnerOtp(value: string) {
     clearInteractiveElements();
     addMessage('user', 'Sí, desvincular');
     setVehicles(prev => prev.map(v => v.plate === plate ? { ...v, active: false } : v));
-    await typeMessage('bot', `🔕 La placa *${plate}* fue marcada como inactiva.`, 800);
+    await typeMessage('bot', `La placa ${plate} fue marcada como inactiva.`, 800);
     setTimeout(() => {
       addButtonGroup([
-        { label: '🚗 Ver mis vehículos', action: 'mc_vehiculos' },
-        { label: '⬅️ Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
-      ]);
-    }, 400);
-  }
-
-  async function setVehiclePrincipal(plate: string) {
-    clearInteractiveElements();
-    addMessage('user', 'Marcar como principal');
-    setVehicles(prev => prev.map(v => ({
-      ...v,
-      role: v.plate === plate ? 'principal' : (v.role === 'principal' ? 'secundario' : v.role),
-    })));
-    await typeMessage('bot', `⭐ La placa *${plate}* fue marcada como principal. Recuerda que el usuario principal es responsable de pagos automáticos.`, 900);
-    setTimeout(() => {
-      addButtonGroup([
-        { label: '🚗 Ver mis vehículos', action: 'mc_vehiculos' },
-        { label: '⬅️ Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
+        { label: 'Ver mis vehículos', action: 'mc_vehiculos' },
+        { label: 'Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
       ]);
     }, 400);
   }
@@ -983,19 +982,29 @@ async function handleOwnerOtp(value: string) {
     clearInteractiveElements();
     addMessage('user', 'Mis usuarios');
     setCurrentStep('mc_usr_list');
+    const principal = vehicles.find(v => v.role === 'principal' && v.active);
+    const secundariosDelVehiculo = principal
+      ? users.filter(u => u.vehiclePlate === principal.plate)
+      : [];
     setTimeout(async () => {
-      await typeMessage('bot', '👥 Usuarios asociados a tus vehículos:', 700);
-      addMenuList('Mis usuarios', users.map(u => ({
-        id: u.id,
-        label: `${u.active ? '✅' : '⛔'} ${u.name}`,
-        action: `mc_usr_select:${u.id}`,
-        description: `${USER_TYPE_LABEL[u.type]}${u.active ? '' : ' · inactivo'}`,
-      })));
+      if (!principal) {
+        await typeMessage('bot', 'No eres principal en ningún vehículo. La gestión de usuarios secundarios solo está disponible para el usuario principal.', 900);
+      } else if (secundariosDelVehiculo.length === 0) {
+        await typeMessage('bot', `Aún no hay usuarios secundarios asociados a tu vehículo ${principal.plate}.`, 800);
+      } else {
+        await typeMessage('bot', `Usuarios secundarios asociados a tu vehículo ${principal.plate}:`, 700);
+        addMenuList('Mis usuarios', secundariosDelVehiculo.map(u => ({
+          id: u.id,
+          label: u.name,
+          action: `mc_usr_select:${u.id}`,
+          description: `${u.phone} · ${u.active ? 'activo' : 'inactivo'}`,
+        })));
+      }
       setTimeout(() => {
-        addButtonGroup([
-          { label: '➕ Invitar usuario', action: 'mc_usr_invite' },
-          { label: '⬅️ Volver a Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
-        ]);
+        const btns: Array<{ label: string; action: string; variant?: 'primary' | 'secondary' }> = [];
+        if (principal) btns.push({ label: 'Invitar usuario', action: 'mc_usr_invite' });
+        btns.push({ label: 'Volver a Mi cuenta', action: 'mc_back_menu', variant: 'secondary' });
+        addButtonGroup(btns);
       }, 400);
     }, 300);
   }
@@ -1008,21 +1017,19 @@ async function handleOwnerOtp(value: string) {
     setCurrentStep('mc_usr_detail');
     setTimeout(async () => {
       await typeMessage('bot',
-        `👤 ${u.name}\n📞 ${u.phone}\n🔖 Tipo: ${USER_TYPE_LABEL[u.type]}\n📌 Estado: ${u.active ? 'Activo' : 'Inactivo'}`,
+        `${u.name}\nCelular: ${u.phone}\nTipo: ${USER_TYPE_LABEL[u.type]}\nVehículo: ${u.vehiclePlate}\nEstado: ${u.active ? 'Activo' : 'Inactivo'}`,
         700
       );
       const btns: Array<{ label: string; action: string; variant?: 'primary' | 'secondary' }> = [];
-      if (u.type === 'secundario' && u.active) {
-        btns.push({ label: '🔧 Cambiar permisos', action: `mc_usr_perm:${id}` });
+      if (u.active) {
+        btns.push({ label: 'Cambiar permisos', action: `mc_usr_perm:${id}` });
       }
-      if (u.type !== 'principal') {
-        btns.push({
-          label: u.active ? '🔕 Desactivar usuario' : '✅ Reactivar usuario',
-          action: `mc_usr_toggle:${id}`,
-          variant: 'secondary',
-        });
-      }
-      btns.push({ label: '⬅️ Volver', action: 'mc_usuarios', variant: 'secondary' });
+      btns.push({
+        label: u.active ? 'Desactivar usuario' : 'Reactivar usuario',
+        action: `mc_usr_toggle:${id}`,
+        variant: 'secondary',
+      });
+      btns.push({ label: 'Volver', action: 'mc_usuarios', variant: 'secondary' });
       addButtonGroup(btns);
     }, 300);
   }
@@ -1031,7 +1038,7 @@ async function handleOwnerOtp(value: string) {
     clearInteractiveElements();
     addMessage('user', 'Invitar usuario');
     setCurrentStep('mc_usr_invite_phone_wait');
-    await typeMessage('bot', '📞 Escribe el celular del usuario que quieres invitar (ej. 3001234567).', 700);
+    await typeMessage('bot', 'Escribe el celular del usuario que quieres invitar (ej. 3001234567).', 700);
     setIsWaitingForInput(true);
   }
 
@@ -1039,23 +1046,25 @@ async function handleOwnerOtp(value: string) {
     setIsWaitingForInput(false);
     setInvitePhone(phone);
     setCurrentStep('mc_usr_invite_name_wait');
-    await typeMessage('bot', '✏️ Ahora escribe el nombre del usuario.', 700);
+    await typeMessage('bot', 'Ahora escribe el nombre del usuario.', 700);
     setIsWaitingForInput(true);
   }
 
   async function handleInviteNameInput(name: string) {
     setIsWaitingForInput(false);
     const newId = 'u' + Date.now();
-    setUsers(prev => [...prev, { id: newId, name, phone: invitePhone, type: 'secundario', active: true }]);
+    const principalVehicle = vehicles.find(v => v.role === 'principal' && v.active);
+    const targetPlate = principalVehicle?.plate ?? 'ABC123';
+    setUsers(prev => [...prev, { id: newId, name, phone: invitePhone, type: 'secundario', active: true, vehiclePlate: targetPlate }]);
     await typeMessage('bot',
-      `✅ Invitación enviada a *${name}* (${invitePhone}).\n\nQuedará activo cuando acepte la invitación. Los pagos automáticos seguirán siendo responsabilidad del usuario principal.`,
+      `Invitación enviada a ${name} (${invitePhone}) para el vehículo ${targetPlate}.\n\nQuedará activo cuando acepte la invitación. Los pagos automáticos seguirán siendo responsabilidad del usuario principal.`,
       1000
     );
     setInvitePhone('');
     setTimeout(() => {
       addButtonGroup([
-        { label: '👥 Ver mis usuarios', action: 'mc_usuarios' },
-        { label: '⬅️ Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
+        { label: 'Ver mis usuarios', action: 'mc_usuarios' },
+        { label: 'Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
       ]);
     }, 400);
   }
@@ -1068,13 +1077,13 @@ async function handleOwnerOtp(value: string) {
     addMessage('user', newActive ? 'Reactivar usuario' : 'Desactivar usuario');
     setUsers(prev => prev.map(x => x.id === id ? { ...x, active: newActive } : x));
     await typeMessage('bot',
-      `${newActive ? '✅' : '🔕'} El usuario *${u.name}* quedó ${newActive ? 'activo' : 'inactivo'}.\n\nLos registros no se eliminan, solo se desactivan por cumplimiento normativo (SIC) y gestión de PQR.`,
+      `El usuario ${u.name} quedó ${newActive ? 'activo' : 'inactivo'}.\n\nLos registros no se eliminan, solo se desactivan por cumplimiento normativo (SIC) y gestión de PQR.`,
       1000
     );
     setTimeout(() => {
       addButtonGroup([
-        { label: '👥 Volver a usuarios', action: 'mc_usuarios' },
-        { label: '⬅️ Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
+        { label: 'Volver a usuarios', action: 'mc_usuarios' },
+        { label: 'Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
       ]);
     }, 400);
   }
@@ -1085,12 +1094,12 @@ async function handleOwnerOtp(value: string) {
     if (!u) return;
     addMessage('user', 'Cambiar permisos');
     await typeMessage('bot',
-      `🔧 Permisos de *${u.name}*:\n\n• Puede pagar manualmente con sus propios medios de pago.\n• No puede usar débito automático (exclusivo del usuario principal).\n• Puede usar Zybo en cualquier parqueadero habilitado.`,
+      `Permisos de ${u.name}:\n\n• Puede pagar manualmente con sus propios medios de pago.\n• No puede usar débito automático (exclusivo del usuario principal).\n• Puede usar Zybo en cualquier parqueadero habilitado.`,
       1000
     );
     setTimeout(() => {
       addButtonGroup([
-        { label: '⬅️ Volver al usuario', action: `mc_usr_select:${id}`, variant: 'secondary' },
+        { label: 'Volver al usuario', action: `mc_usr_select:${id}`, variant: 'secondary' },
       ]);
     }, 400);
   }
@@ -1098,7 +1107,6 @@ async function handleOwnerOtp(value: string) {
   function handleAction(action: string) {
     // Acciones con parámetro: mc_*:<id>
     if (action.startsWith('mc_veh_select:')) return showVehicleDetail(action.split(':')[1]);
-    if (action.startsWith('mc_veh_principal:')) return setVehiclePrincipal(action.split(':')[1]);
     if (action.startsWith('mc_veh_remove:')) return confirmRemoveVehicle(action.split(':')[1]);
     if (action.startsWith('mc_veh_remove_ok:')) return doRemoveVehicle(action.split(':')[1]);
     if (action.startsWith('mc_usr_select:')) return showUserDetail(action.split(':')[1]);
@@ -1694,6 +1702,7 @@ async function handleOwnerOtp(value: string) {
                     title={menu.title}
                     options={menu.options}
                     onOptionClick={handleAction}
+                    onOpenSheet={openSheet}
                   />
                 ))}
 
@@ -1703,6 +1712,7 @@ async function handleOwnerOtp(value: string) {
                     showAutomatic={selector.showAutomatic}
                     variant={selector.variant}
                     onSelect={handlePaymentSelectorClick}
+                    onOpenSheet={openSheet}
                   />
                 ))}
 
@@ -1736,6 +1746,16 @@ async function handleOwnerOtp(value: string) {
           </div>
 
 
+
+          {/* Bottom sheet modal */}
+          {activeSheet && (
+            <BottomSheet
+              title={activeSheet.title}
+              options={activeSheet.options}
+              onSelect={activeSheet.onSelect}
+              onClose={() => setActiveSheet(null)}
+            />
+          )}
 
           {/* Tooltip */}
           {tooltip.visible && (

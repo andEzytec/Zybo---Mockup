@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AlignJustify } from 'lucide-react';
 
 interface MenuOption {
   id: string;
@@ -9,49 +10,46 @@ interface MenuOption {
 
 interface MenuListProps {
   title?: string;
+  buttonLabel?: string;
   options: MenuOption[];
   onOptionClick: (action: string) => void;
+  onOpenSheet: (config: {
+    title: string;
+    options: Array<{ id: string; label: string; description?: string; action: string }>;
+    onSelect: (action: string) => void;
+  }) => void;
 }
 
-export function MenuList({ title, options, onOptionClick }: MenuListProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const isDone = selectedId !== null;
+export function MenuList({ title, buttonLabel, options, onOptionClick, onOpenSheet }: MenuListProps) {
+  const [done, setDone] = useState(false);
+
+  const sheetTitle = title || 'Menú principal';
+  const btnText = buttonLabel || title || 'Ver opciones';
+
+  function handleOpen() {
+    onOpenSheet({
+      title: sheetTitle,
+      options,
+      onSelect: (action) => {
+        setDone(true);
+        onOptionClick(action);
+      },
+    });
+  }
 
   return (
     <div className="flex justify-start mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="max-w-[85%] bg-white rounded-lg shadow-sm overflow-hidden">
-        {title && (
-          <div className="bg-[#075e54] text-white px-4 py-2 font-medium text-sm">
-            {title}
-          </div>
-        )}
-        <div className="divide-y divide-gray-100">
-          {options.map((option) => (
-            <button
-              key={option.id}
-              disabled={isDone}
-              onClick={() => {
-                setSelectedId(option.id);
-                onOptionClick(option.action);
-              }}
-              className={`w-full px-4 py-3 text-left transition-colors flex items-start gap-3 ${
-                isDone ? 'cursor-default opacity-60' : 'hover:bg-gray-50'
-              }`}
-            >
-              {<span className="text-lg"></span>}
-              <div className="flex-1">
-                <div className="text-[15px] text-gray-800 font-medium">
-                  {option.label}
-                </div>
-                {option.description && (
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {option.description}
-                  </div>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
+      <div className="max-w-[85%] w-full bg-white rounded-lg shadow-sm overflow-hidden">
+        <button
+          disabled={done}
+          onClick={handleOpen}
+          className={`w-full px-4 py-3 flex items-center justify-center gap-2 text-[#00a884] font-medium text-[15px] transition-colors ${
+            done ? 'opacity-60 cursor-default' : 'hover:bg-gray-50'
+          }`}
+        >
+          <AlignJustify className="w-4 h-4" />
+          <span>{btnText}</span>
+        </button>
       </div>
     </div>
   );
