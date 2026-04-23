@@ -148,11 +148,15 @@ export default function App() {
   const [miCuentaOrigin, setMiCuentaOrigin] = useState<'ep' | 're' | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([
     { plate: 'ABC123', role: 'principal', status: 'Débito automático activo', active: true },
+    { plate: 'MNP234', role: 'principal', status: 'Sin débito automático', active: true },
     { plate: 'XYZ789', role: 'secundario', status: 'Principal: María López', active: true },
+    { plate: 'QRS567', role: 'secundario', status: 'Principal: Juan Vélez', active: true },
   ]);
   const [users, setUsers] = useState<UserEntry[]>([
     { id: 'u2', name: 'Ana Gómez', phone: '301 234 5678', type: 'secundario', active: true, vehiclePlate: 'ABC123' },
     { id: 'u3', name: 'Luis Ruiz', phone: '302 345 6789', type: 'secundario', active: false, vehiclePlate: 'ABC123' },
+    { id: 'u4', name: 'Sofía Díaz', phone: '305 678 9012', type: 'secundario', active: true, vehiclePlate: 'ABC123' },
+    { id: 'u5', name: 'Jorge Martínez', phone: '306 789 0123', type: 'secundario', active: true, vehiclePlate: 'MNP234' },
   ]);
   const [invitePhone, setInvitePhone] = useState<string>('');
   const [activeSheet, setActiveSheet] = useState<ActiveSheet>(null);
@@ -977,25 +981,44 @@ async function handleOwnerOtp(value: string) {
   }
 
   // ---- Usuarios ----
+  function getSecundariosDeCarlos() {
+    const placasPrincipales = vehicles
+      .filter(v => v.role === 'principal' && v.active)
+      .map(v => v.plate);
+    return users.filter(u => placasPrincipales.includes(u.vehiclePlate) && u.active);
+  }
+
   function showUsersList() {
     clearInteractiveElements();
     addMessage('user', 'Mis usuarios');
     setCurrentStep('mc_usr_list');
-    const principal = vehicles.find(v => v.role === 'principal' && v.active);
-    const secundarios = principal
-      ? users.filter(u => u.vehiclePlate === principal.plate && u.active)
-      : [];
+    const placasPrincipales = vehicles
+      .filter(v => v.role === 'principal' && v.active)
+      .map(v => v.plate);
+    const secundarios = getSecundariosDeCarlos();
     setTimeout(async () => {
-      if (!principal) {
+      if (placasPrincipales.length === 0) {
         await typeMessage('bot', 'No eres principal en ningún vehículo. La gestión de usuarios secundarios solo está disponible para el usuario principal.', 900);
         setTimeout(() => addButtonGroup([
           { label: 'Volver al menú principal', action: 'mc_back_menu', variant: 'secondary' },
         ]), 300);
         return;
       }
-      const texto = secundarios.length === 0
-        ? `Aún no hay usuarios secundarios asociados a tu vehículo ${principal.plate}.`
-        : `Usuarios secundarios asociados a tu vehículo ${principal.plate}:\n\n${secundarios.map(u => `• ${u.name} — ${u.phone}`).join('\n')}`;
+      let texto: string;
+      if (secundarios.length === 0) {
+        texto = 'Aún no hay usuarios secundarios asociados a tus vehículos.';
+      } else {
+        const grupos = placasPrincipales
+          .map(plate => {
+            const delGrupo = secundarios.filter(u => u.vehiclePlate === plate);
+            if (delGrupo.length === 0) return null;
+            const lineas = delGrupo.map(u => `  • ${u.name} — ${u.phone}`).join('\n');
+            return `Vehículo ${plate}:\n${lineas}`;
+          })
+          .filter(Boolean)
+          .join('\n\n');
+        texto = `Usuarios secundarios asociados a tus vehículos:\n\n${grupos}`;
+      }
       await typeMessage('bot', texto, 900);
       setTimeout(() => {
         const btns: Array<{ label: string; action: string; variant?: 'primary' | 'secondary' }> = [
@@ -1011,10 +1034,7 @@ async function handleOwnerOtp(value: string) {
   function startRemoveUserFlow() {
     clearInteractiveElements();
     addMessage('user', 'Eliminar usuario');
-    const principal = vehicles.find(v => v.role === 'principal' && v.active);
-    const secundarios = principal
-      ? users.filter(u => u.vehiclePlate === principal.plate && u.active)
-      : [];
+    const secundarios = getSecundariosDeCarlos();
     if (secundarios.length === 0) {
       setTimeout(async () => {
         await typeMessage('bot', 'No hay usuarios secundarios activos para eliminar.', 700);
@@ -1030,7 +1050,7 @@ async function handleOwnerOtp(value: string) {
         id: u.id,
         label: u.name,
         action: `mc_usr_remove:${u.id}`,
-        description: u.phone,
+        description: `${u.phone} · Vehículo ${u.vehiclePlate}`,
       }));
       options.push({ id: 'cancel', label: 'Cancelar', action: 'mc_usuarios', description: 'Volver a Mis usuarios.' });
       addMenuList('Seleccionar usuario', options);
