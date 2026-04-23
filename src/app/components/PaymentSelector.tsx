@@ -1,4 +1,6 @@
 // PaymentSelector.tsx
+import { useState } from 'react';
+
 interface PaymentOption {
   id: string;
   name: string;
@@ -13,6 +15,9 @@ interface PaymentSelectorProps {
 }
 
 export function PaymentSelector({ onSelect, showAutomatic = false, variant = 'pay' }: PaymentSelectorProps) {
+  const [clicked, setClicked] = useState(false);
+
+  if (clicked) return null;
   // Opciones para pagar (desde el flujo de entrada/pago)
   const paymentOptions: PaymentOption[] = [
     { 
@@ -77,7 +82,10 @@ export function PaymentSelector({ onSelect, showAutomatic = false, variant = 'pa
           {options.map((option) => (
             <button
               key={option.id}
-              onClick={() => onSelect(option.id)}
+              onClick={() => {
+                setClicked(true);
+                onSelect(option.id);
+              }}
               className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
             >
               <div className="flex-1">
@@ -97,7 +105,10 @@ export function PaymentSelector({ onSelect, showAutomatic = false, variant = 'pa
           ))}
           {showAutomatic && (
             <button
-              onClick={() => onSelect('back_to_menu')}
+              onClick={() => {
+                setClicked(true);
+                onSelect('back_to_menu');
+              }}
               className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors text-gray-600 text-sm"
             >
               ← Regresar al menú
