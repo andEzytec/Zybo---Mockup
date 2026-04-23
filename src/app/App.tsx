@@ -114,10 +114,6 @@ const ROLE_LABEL: Record<VehicleRole, string> = {
   secundario: 'Secundario',
 };
 
-const USER_TYPE_LABEL: Record<UserType, string> = {
-  principal: 'Principal (propietario)',
-  secundario: 'Secundario',
-};
 
 
 export default function App() {
@@ -867,39 +863,44 @@ async function handleOwnerOtp(value: string) {
     setCurrentStep('mc_veh_list');
     const activos = vehicles.filter(v => v.active);
     setTimeout(async () => {
-      await typeMessage('bot',
-        activos.length === 0
-          ? 'No tienes vehículos activos asociados.'
-          : 'Vehículos a los que estás asociado:',
-        700
-      );
-      const options = activos.map(v => ({
-        id: v.plate,
-        label: `${v.plate} — ${ROLE_LABEL[v.role]}`,
-        action: `mc_veh_select:${v.plate}`,
-        description: v.status,
-      }));
-      options.push({ id: 'add', label: 'Agregar vehículo', action: 'mc_veh_add', description: 'Asociar una nueva placa a tu cuenta.' });
-      options.push({ id: 'back', label: 'Volver al menú principal', action: 'mc_back_menu', description: 'Regresar al menú de Mi cuenta.' });
-      addMenuList('Mis vehículos', options);
+      const texto = activos.length === 0
+        ? 'No tienes vehículos asociados a tu cuenta.'
+        : `Vehículos asociados a tu cuenta:\n\n${activos.map(v => `• ${v.plate} — ${ROLE_LABEL[v.role]}\n  ${v.status}`).join('\n\n')}`;
+      await typeMessage('bot', texto, 900);
+      setTimeout(() => {
+        const btns: Array<{ label: string; action: string; variant?: 'primary' | 'secondary' }> = [
+          { label: 'Agregar vehículo', action: 'mc_veh_add' },
+        ];
+        if (activos.length > 0) btns.push({ label: 'Eliminar vehículo', action: 'mc_veh_remove_flow' });
+        btns.push({ label: 'Volver al menú principal', action: 'mc_back_menu', variant: 'secondary' });
+        addButtonGroup(btns);
+      }, 400);
     }, 300);
   }
 
-  function showVehicleDetail(plate: string) {
+  function startRemoveVehicleFlow() {
     clearInteractiveElements();
-    const v = vehicles.find(x => x.plate === plate);
-    if (!v) return;
-    addMessage('user', plate);
-    setCurrentStep('mc_veh_detail');
+    addMessage('user', 'Eliminar vehículo');
+    const activos = vehicles.filter(v => v.active);
+    if (activos.length === 0) {
+      setTimeout(async () => {
+        await typeMessage('bot', 'No hay vehículos activos para desvincular.', 700);
+        setTimeout(() => addButtonGroup([
+          { label: 'Volver a Mis vehículos', action: 'mc_vehiculos', variant: 'secondary' },
+        ]), 300);
+      }, 300);
+      return;
+    }
     setTimeout(async () => {
-      await typeMessage('bot',
-        `${v.plate}\nRol: ${ROLE_LABEL[v.role]}\nEstado: ${v.status}`,
-        700
-      );
-      const btns: Array<{ label: string; action: string; variant?: 'primary' | 'secondary' }> = [];
-      btns.push({ label: 'Desvincular placa', action: `mc_veh_remove:${plate}`, variant: 'secondary' });
-      btns.push({ label: 'Volver', action: 'mc_vehiculos', variant: 'secondary' });
-      addButtonGroup(btns);
+      await typeMessage('bot', 'Elige el vehículo que deseas desvincular:', 700);
+      const options = activos.map(v => ({
+        id: v.plate,
+        label: `${v.plate} — ${ROLE_LABEL[v.role]}`,
+        action: `mc_veh_remove:${v.plate}`,
+        description: v.status,
+      }));
+      options.push({ id: 'cancel', label: 'Cancelar', action: 'mc_vehiculos', description: 'Volver a Mis vehículos.' });
+      addMenuList('Seleccionar vehículo', options);
     }, 300);
   }
 
@@ -981,58 +982,91 @@ async function handleOwnerOtp(value: string) {
     addMessage('user', 'Mis usuarios');
     setCurrentStep('mc_usr_list');
     const principal = vehicles.find(v => v.role === 'principal' && v.active);
-    const secundariosDelVehiculo = principal
-      ? users.filter(u => u.vehiclePlate === principal.plate)
+    const secundarios = principal
+      ? users.filter(u => u.vehiclePlate === principal.plate && u.active)
       : [];
     setTimeout(async () => {
       if (!principal) {
         await typeMessage('bot', 'No eres principal en ningún vehículo. La gestión de usuarios secundarios solo está disponible para el usuario principal.', 900);
-        addMenuList('Mis usuarios', [
-          { id: 'back', label: 'Volver al menú principal', action: 'mc_back_menu', description: 'Regresar al menú de Mi cuenta.' },
-        ]);
+        setTimeout(() => addButtonGroup([
+          { label: 'Volver al menú principal', action: 'mc_back_menu', variant: 'secondary' },
+        ]), 300);
         return;
       }
-      await typeMessage('bot',
-        secundariosDelVehiculo.length === 0
-          ? `Aún no hay usuarios secundarios asociados a tu vehículo ${principal.plate}.`
-          : `Usuarios secundarios asociados a tu vehículo ${principal.plate}:`,
-        700
-      );
-      const options = secundariosDelVehiculo.map(u => ({
-        id: u.id,
-        label: u.name,
-        action: `mc_usr_select:${u.id}`,
-        description: `${u.phone} · ${u.active ? 'activo' : 'inactivo'}`,
-      }));
-      options.push({ id: 'invite', label: 'Invitar usuario', action: 'mc_usr_invite', description: 'Enviar invitación a un nuevo secundario.' });
-      options.push({ id: 'back', label: 'Volver al menú principal', action: 'mc_back_menu', description: 'Regresar al menú de Mi cuenta.' });
-      addMenuList('Mis usuarios', options);
+      const texto = secundarios.length === 0
+        ? `Aún no hay usuarios secundarios asociados a tu vehículo ${principal.plate}.`
+        : `Usuarios secundarios asociados a tu vehículo ${principal.plate}:\n\n${secundarios.map(u => `• ${u.name} — ${u.phone}`).join('\n')}`;
+      await typeMessage('bot', texto, 900);
+      setTimeout(() => {
+        const btns: Array<{ label: string; action: string; variant?: 'primary' | 'secondary' }> = [
+          { label: 'Agregar usuario', action: 'mc_usr_invite' },
+        ];
+        if (secundarios.length > 0) btns.push({ label: 'Eliminar usuario', action: 'mc_usr_remove_flow' });
+        btns.push({ label: 'Volver al menú principal', action: 'mc_back_menu', variant: 'secondary' });
+        addButtonGroup(btns);
+      }, 400);
     }, 300);
   }
 
-  function showUserDetail(id: string) {
+  function startRemoveUserFlow() {
+    clearInteractiveElements();
+    addMessage('user', 'Eliminar usuario');
+    const principal = vehicles.find(v => v.role === 'principal' && v.active);
+    const secundarios = principal
+      ? users.filter(u => u.vehiclePlate === principal.plate && u.active)
+      : [];
+    if (secundarios.length === 0) {
+      setTimeout(async () => {
+        await typeMessage('bot', 'No hay usuarios secundarios activos para eliminar.', 700);
+        setTimeout(() => addButtonGroup([
+          { label: 'Volver a Mis usuarios', action: 'mc_usuarios', variant: 'secondary' },
+        ]), 300);
+      }, 300);
+      return;
+    }
+    setTimeout(async () => {
+      await typeMessage('bot', 'Elige el usuario que deseas eliminar:', 700);
+      const options = secundarios.map(u => ({
+        id: u.id,
+        label: u.name,
+        action: `mc_usr_remove:${u.id}`,
+        description: u.phone,
+      }));
+      options.push({ id: 'cancel', label: 'Cancelar', action: 'mc_usuarios', description: 'Volver a Mis usuarios.' });
+      addMenuList('Seleccionar usuario', options);
+    }, 300);
+  }
+
+  function confirmRemoveUser(id: string) {
     clearInteractiveElements();
     const u = users.find(x => x.id === id);
     if (!u) return;
-    addMessage('user', u.name);
-    setCurrentStep('mc_usr_detail');
+    addMessage('user', `Eliminar ${u.name}`);
     setTimeout(async () => {
       await typeMessage('bot',
-        `${u.name}\nCelular: ${u.phone}\nTipo: ${USER_TYPE_LABEL[u.type]}\nVehículo: ${u.vehiclePlate}\nEstado: ${u.active ? 'Activo' : 'Inactivo'}`,
-        700
+        `¿Seguro que deseas eliminar a ${u.name}?\n\nPor normativa (Superintendencia de Industria y Comercio), el registro no se elimina: solo se marca como inactivo para gestión de PQR y puede reactivarse después.`,
+        1000
       );
-      const btns: Array<{ label: string; action: string; variant?: 'primary' | 'secondary' }> = [];
-      if (u.active) {
-        btns.push({ label: 'Cambiar permisos', action: `mc_usr_perm:${id}` });
-      }
-      btns.push({
-        label: u.active ? 'Desactivar usuario' : 'Reactivar usuario',
-        action: `mc_usr_toggle:${id}`,
-        variant: 'secondary',
-      });
-      btns.push({ label: 'Volver', action: 'mc_usuarios', variant: 'secondary' });
-      addButtonGroup(btns);
+      addButtonGroup([
+        { label: 'Sí, eliminar', action: `mc_usr_remove_ok:${id}` },
+        { label: 'Cancelar', action: 'mc_usuarios', variant: 'secondary' },
+      ]);
     }, 300);
+  }
+
+  async function doRemoveUser(id: string) {
+    clearInteractiveElements();
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    addMessage('user', 'Sí, eliminar');
+    setUsers(prev => prev.map(x => x.id === id ? { ...x, active: false } : x));
+    await typeMessage('bot', `El usuario ${u.name} fue marcado como inactivo.`, 800);
+    setTimeout(() => {
+      addButtonGroup([
+        { label: 'Volver a Mis usuarios', action: 'mc_usuarios' },
+        { label: 'Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
+      ]);
+    }, 400);
   }
 
   async function startInviteUser() {
@@ -1107,12 +1141,10 @@ async function handleOwnerOtp(value: string) {
 
   function handleAction(action: string) {
     // Acciones con parámetro: mc_*:<id>
-    if (action.startsWith('mc_veh_select:')) return showVehicleDetail(action.split(':')[1]);
     if (action.startsWith('mc_veh_remove:')) return confirmRemoveVehicle(action.split(':')[1]);
     if (action.startsWith('mc_veh_remove_ok:')) return doRemoveVehicle(action.split(':')[1]);
-    if (action.startsWith('mc_usr_select:')) return showUserDetail(action.split(':')[1]);
-    if (action.startsWith('mc_usr_toggle:')) return toggleUser(action.split(':')[1]);
-    if (action.startsWith('mc_usr_perm:')) return changeUserPermissions(action.split(':')[1]);
+    if (action.startsWith('mc_usr_remove:')) return confirmRemoveUser(action.split(':')[1]);
+    if (action.startsWith('mc_usr_remove_ok:')) return doRemoveUser(action.split(':')[1]);
 
     switch (action) {
       case 'open_form':
@@ -1275,8 +1307,16 @@ async function handleOwnerOtp(value: string) {
         startAddVehicle();
         break;
 
+      case 'mc_veh_remove_flow':
+        startRemoveVehicleFlow();
+        break;
+
       case 'mc_usr_invite':
         startInviteUser();
+        break;
+
+      case 'mc_usr_remove_flow':
+        startRemoveUserFlow();
         break;
 
       case 'mc_back_menu':
