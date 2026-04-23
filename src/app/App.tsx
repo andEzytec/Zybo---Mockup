@@ -867,23 +867,21 @@ async function handleOwnerOtp(value: string) {
     setCurrentStep('mc_veh_list');
     const activos = vehicles.filter(v => v.active);
     setTimeout(async () => {
-      if (activos.length === 0) {
-        await typeMessage('bot', 'No tienes vehículos activos asociados.', 700);
-      } else {
-        await typeMessage('bot', 'Vehículos a los que estás asociado:', 700);
-        addMenuList('Mis vehículos', activos.map(v => ({
-          id: v.plate,
-          label: `${v.plate} — ${ROLE_LABEL[v.role]}`,
-          action: `mc_veh_select:${v.plate}`,
-          description: v.status,
-        })));
-      }
-      setTimeout(() => {
-        addButtonGroup([
-          { label: 'Agregar vehículo', action: 'mc_veh_add' },
-          { label: 'Volver a Mi cuenta', action: 'mc_back_menu', variant: 'secondary' },
-        ]);
-      }, 400);
+      await typeMessage('bot',
+        activos.length === 0
+          ? 'No tienes vehículos activos asociados.'
+          : 'Vehículos a los que estás asociado:',
+        700
+      );
+      const options = activos.map(v => ({
+        id: v.plate,
+        label: `${v.plate} — ${ROLE_LABEL[v.role]}`,
+        action: `mc_veh_select:${v.plate}`,
+        description: v.status,
+      }));
+      options.push({ id: 'add', label: 'Agregar vehículo', action: 'mc_veh_add', description: 'Asociar una nueva placa a tu cuenta.' });
+      options.push({ id: 'back', label: 'Volver al menú principal', action: 'mc_back_menu', description: 'Regresar al menú de Mi cuenta.' });
+      addMenuList('Mis vehículos', options);
     }, 300);
   }
 
@@ -989,23 +987,26 @@ async function handleOwnerOtp(value: string) {
     setTimeout(async () => {
       if (!principal) {
         await typeMessage('bot', 'No eres principal en ningún vehículo. La gestión de usuarios secundarios solo está disponible para el usuario principal.', 900);
-      } else if (secundariosDelVehiculo.length === 0) {
-        await typeMessage('bot', `Aún no hay usuarios secundarios asociados a tu vehículo ${principal.plate}.`, 800);
-      } else {
-        await typeMessage('bot', `Usuarios secundarios asociados a tu vehículo ${principal.plate}:`, 700);
-        addMenuList('Mis usuarios', secundariosDelVehiculo.map(u => ({
-          id: u.id,
-          label: u.name,
-          action: `mc_usr_select:${u.id}`,
-          description: `${u.phone} · ${u.active ? 'activo' : 'inactivo'}`,
-        })));
+        addMenuList('Mis usuarios', [
+          { id: 'back', label: 'Volver al menú principal', action: 'mc_back_menu', description: 'Regresar al menú de Mi cuenta.' },
+        ]);
+        return;
       }
-      setTimeout(() => {
-        const btns: Array<{ label: string; action: string; variant?: 'primary' | 'secondary' }> = [];
-        if (principal) btns.push({ label: 'Invitar usuario', action: 'mc_usr_invite' });
-        btns.push({ label: 'Volver a Mi cuenta', action: 'mc_back_menu', variant: 'secondary' });
-        addButtonGroup(btns);
-      }, 400);
+      await typeMessage('bot',
+        secundariosDelVehiculo.length === 0
+          ? `Aún no hay usuarios secundarios asociados a tu vehículo ${principal.plate}.`
+          : `Usuarios secundarios asociados a tu vehículo ${principal.plate}:`,
+        700
+      );
+      const options = secundariosDelVehiculo.map(u => ({
+        id: u.id,
+        label: u.name,
+        action: `mc_usr_select:${u.id}`,
+        description: `${u.phone} · ${u.active ? 'activo' : 'inactivo'}`,
+      }));
+      options.push({ id: 'invite', label: 'Invitar usuario', action: 'mc_usr_invite', description: 'Enviar invitación a un nuevo secundario.' });
+      options.push({ id: 'back', label: 'Volver al menú principal', action: 'mc_back_menu', description: 'Regresar al menú de Mi cuenta.' });
+      addMenuList('Mis usuarios', options);
     }, 300);
   }
 
