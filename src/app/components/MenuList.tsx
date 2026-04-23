@@ -14,9 +14,8 @@ interface MenuListProps {
 }
 
 export function MenuList({ title, options, onOptionClick }: MenuListProps) {
-  const [clicked, setClicked] = useState(false);
-
-  if (clicked) return null;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const isDone = selectedId !== null;
 
   return (
     <div className="flex justify-start mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -30,11 +29,14 @@ export function MenuList({ title, options, onOptionClick }: MenuListProps) {
           {options.map((option) => (
             <button
               key={option.id}
+              disabled={isDone}
               onClick={() => {
-                setClicked(true);
+                setSelectedId(option.id);
                 onOptionClick(option.action);
               }}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-start gap-3"
+              className={`w-full px-4 py-3 text-left transition-colors flex items-start gap-3 ${
+                isDone ? 'cursor-default opacity-60' : 'hover:bg-gray-50'
+              }`}
             >
               {<span className="text-lg"></span>}
               <div className="flex-1">

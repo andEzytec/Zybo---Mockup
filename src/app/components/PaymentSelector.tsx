@@ -15,9 +15,9 @@ interface PaymentSelectorProps {
 }
 
 export function PaymentSelector({ onSelect, showAutomatic = false, variant = 'pay' }: PaymentSelectorProps) {
-  const [clicked, setClicked] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const isDone = selectedId !== null;
 
-  if (clicked) return null;
   // Opciones para pagar (desde el flujo de entrada/pago)
   const paymentOptions: PaymentOption[] = [
     { 
@@ -82,11 +82,16 @@ export function PaymentSelector({ onSelect, showAutomatic = false, variant = 'pa
           {options.map((option) => (
             <button
               key={option.id}
+              disabled={isDone}
               onClick={() => {
-                setClicked(true);
+                setSelectedId(option.id);
                 onSelect(option.id);
               }}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+              className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-3 ${
+                isDone
+                  ? 'cursor-default opacity-60'
+                  : 'hover:bg-gray-50'
+              }`}
             >
               <div className="flex-1">
                 <div className="text-[15px] text-gray-800 font-medium">
@@ -105,11 +110,14 @@ export function PaymentSelector({ onSelect, showAutomatic = false, variant = 'pa
           ))}
           {showAutomatic && (
             <button
+              disabled={isDone}
               onClick={() => {
-                setClicked(true);
+                setSelectedId('back_to_menu');
                 onSelect('back_to_menu');
               }}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors text-gray-600 text-sm"
+              className={`w-full px-4 py-3 text-left transition-colors text-gray-600 text-sm ${
+                isDone ? 'cursor-default opacity-60' : 'hover:bg-gray-50'
+              }`}
             >
               ← Regresar al menú
             </button>
