@@ -6,6 +6,7 @@ import { MenuList } from './components/MenuList';
 import { PaymentSelector } from './components/PaymentSelector';
 import { FormModal, FormData } from './components/FormModal';
 import { BottomSheet } from './components/BottomSheet';
+import { InviteUsersModal } from './components/InviteUsersModal';
 import { Phone, Video, MoreVertical, RefreshCw } from 'lucide-react';
 import { LandingWebScreen } from './components/LandingWeb';
 
@@ -75,6 +76,9 @@ type FlowStep =
   | 'reg_owner_otp_wait'
 
   | 'registration_success'
+  | 'reg_invite_step'
+  | 'reg_invite_modal_open'
+  | 'reg_link_pay_step'
   | 're_menu_externo' // NUEVO
   | 'vp_start'
   | 'vp_otp_wait'
@@ -160,6 +164,9 @@ export default function App() {
   ]);
   const [invitePhone, setInvitePhone] = useState<string>('');
   const [activeSheet, setActiveSheet] = useState<ActiveSheet>(null);
+  const [registeredName, setRegisteredName] = useState<string>('');
+  const [registeredPlate, setRegisteredPlate] = useState<string>('');
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   function openSheet(config: NonNullable<ActiveSheet>) {
     setActiveSheet({
@@ -259,12 +266,15 @@ export default function App() {
     setCurrentStep('welcome');
     await typeMessage('user', 'Quiero registrarme', 600);
     await typeMessage('bot',
-      `Hola 👋\nSoy Zybo 🚗, tu asistente de movilidad y pagos de parqueadero.\n\n🎉 Regístrate, una sola vez, para hacer más fácil tu experiencia de parqueo, ganar tiempo y acceder a beneficios exclusivos en los principales centros comerciales del país.`,
+      `Hola 👋\nSoy Zybo 🚗, tu asistente de movilidad y pago de parqueadero.\n\nRegístrate para hacer más fácil tu experiencia de parqueo, ganar tiempo y acceder a beneficios exclusivos en los principales centros comerciales del país.`,
       1200
     );
     setTimeout(() => {
       setCurrentStep('show_form_cta');
-      addButtonGroup([{ label: '📝 Registrame', action: 'open_form' }]);
+      addButtonGroup([
+        { label: 'Conoce Zybo', action: 'open_slider_welcome', variant: 'secondary' },
+        { label: 'Registrarme', action: 'open_form' },
+      ]);
     }, 1200);
   }
 
@@ -300,12 +310,15 @@ export default function App() {
     // Mensaje de campaña/QR externo
     await typeMessage('user', 'Quiero registrarme', 600);
     await typeMessage('bot',
-      `Hola 👋\nSoy Zybo 🚗, tu asistente virtual de parqueo.\n\n🎉 Regístrate ahora para hacer más fácil tu experiencia de parqueo, ganar tiempo y acceder a beneficios exclusivos en los parqueaderos de los principales centros comerciales del país.`,
+      `Hola 👋\nSoy Zybo 🚗, tu asistente de movilidad y pago de parqueadero.\n\nRegístrate para hacer más fácil tu experiencia de parqueo, ganar tiempo y acceder a beneficios exclusivos en los principales centros comerciales del país.`,
       1200
     );
     setTimeout(() => {
       setCurrentStep('show_form_cta');
-      addButtonGroup([{ label: '📝 Registrame ahora', action: 'open_form' }]);
+      addButtonGroup([
+        { label: 'Conoce Zybo', action: 'open_slider_welcome', variant: 'secondary' },
+        { label: 'Registrarme', action: 'open_form' },
+      ]);
     }, 1200);
   }
 
@@ -338,80 +351,95 @@ export default function App() {
     addMessage('user', 'Formulario completado ✅');
 
     setTimeout(async () => {
-  const plate = (formData.plate || '').toUpperCase().replace(/\s+/g, '');
+      const plate = (formData.plate || '').toUpperCase().replace(/\s+/g, '');
 
-  // ✅ ESCENARIO 1: ABC123 -> Éxito (comportamiento normal)
-  if (plate === 'ABC123') {
-    setCurrentStep('registration_success');
+      // ESCENARIO: Placa no está en RUT -> volver al formulario
+      if (plate === 'ABC456') {
+        setCurrentStep('reg_rut_not_found');
+        await typeMessage(
+          'bot',
+          `⚠️ No encontramos la placa *${plate}* en el RUT.\n\nPor favor verifica la placa e intenta de nuevo.`,
+          1000
+        );
+        setTimeout(() => {
+          setCurrentStep('show_form_cta');
+          addButtonGroup([{ label: 'Corregir mis datos', action: 'open_form' }]);
+        }, 600);
+        return;
+      }
 
-    if (simulation === 'registro_externo') {
+      // ESCENARIO: Ya tiene usuario principal -> OTP al propietario
+      if (plate === 'ABC789') {
+        setCurrentStep('reg_owner_otp_wait');
+        await typeMessage(
+          'bot',
+          `🔐 Este vehículo ya tiene un usuario principal.\n\nPor favor, ingresa el código de verificación enviado al usuario principal al celular ${formData.phone ?? ''} del vehículo de placa ${formData.plate}.`,
+          1200
+        );
+        setIsWaitingForInput(true);
+        return;
+      }
+
+      // ÉXITO (ABC123 o cualquier otra placa)
+      setRegisteredName(formData.name);
+      setRegisteredPlate(plate);
+      setCurrentStep('registration_success');
       await typeMessage(
         'bot',
-        `🎉 ¡Felicitaciones ${formData.name}! Tu registro ha sido completado exitosamente.\n\nPara pagar automaticamente sin pasar por cajeros evitando uso de efectivo, vincula tus datos de pago`,
+        `🎉 ¡Felicitaciones ${formData.name}! Ahora eres parte de Zybo.\n\nAhora podrás pagar sin filas tu parqueadero y disfrutar de otros beneficios exclusivos de Zybo.`,
         1200
       );
-      setTimeout(() => {
-       addButtonGroup([
-        { label: '💳 Vincular medio de pago', action: 'vincular_desde_pago' },
-        { label: 'Lo haré después', action: 'volver_inicio', variant: 'secondary' }
-      ]);
-      }, 500);
-    } else {
-      await typeMessage(
-        'bot',
-        `🎉 ¡Felicitaciones ${formData.name}! Tu registro ha sido completado exitosamente.\n\nPara pagar automaticamente sin pasar por cajeros evitando uso de efectivo, vincula tus datos de pago`,
-        1200
-      );
-      addButtonGroup([
-        { label: '💳 Vincular Medio De Pago', action: 'vincular_desde_registro' },
-        { label: 'Lo haré después', action: 'done', variant: 'secondary' },
-      ]);
-    }
-
-    return;
+      setTimeout(() => showInviteUsersStep(), 700);
+    }, 1800);
   }
 
-  // ❌ ESCENARIO 2: ABC456 -> Placa no está en RUT -> reenviar el flow (volver al formulario)
-  if (plate === 'ABC456') {
-    setCurrentStep('reg_rut_not_found');
-
+  async function showInviteUsersStep() {
+    clearInteractiveElements();
+    setCurrentStep('reg_invite_step');
     await typeMessage(
       'bot',
-      `⚠️ No encontramos la placa *${plate}* en el RUT.\n\nPor favor verifica la placa e intenta de nuevo.`,
-      1000
+      'Si tienes otras personas que manejan este vehículo, puedes invitarlas ahora.',
+      900
     );
-
-    // vuelve a mostrar el CTA del formulario como al inicio del registro
     setTimeout(() => {
-      setCurrentStep('show_form_cta');
-      addButtonGroup([{ label: 'Corregir mis datos ', action: 'open_form' }]);
-    }, 600);
-
-    return;
+      addButtonGroup([
+        { label: 'Conoce Zybo', action: 'open_slider_invite', variant: 'secondary' },
+        { label: 'Invitar usuarios', action: 'invite_users_open' },
+        { label: 'Lo haré después', action: 'skip_invite_users', variant: 'secondary' },
+      ]);
+    }, 400);
   }
 
-  // 🔐 ESCENARIO 3: ABC789 -> Ya tiene usuario principal -> OTP al propietario
-  if (plate === 'ABC789') {
-    setCurrentStep('reg_owner_otp_wait');
+  async function handleInviteUsersSubmit(phones: string[]) {
+    setIsInviteModalOpen(false);
+    addMessage('user', `${phones.length} ${phones.length === 1 ? 'invitación enviada' : 'invitaciones enviadas'}`);
+    setTimeout(async () => {
+      await typeMessage(
+        'bot',
+        `✅ Listo. Enviamos un mensaje de Zybo a ${phones.length === 1 ? 'esa persona' : `esas ${phones.length} personas`} indicando que ${registeredName || 'tú'} ${phones.length === 1 ? 'la' : 'las'} invitó a manejar el vehículo ${registeredPlate}.\n\nQuedarán activas cuando acepten la invitación.`,
+        1100
+      );
+      setTimeout(() => showVincularPagoStep(), 600);
+    }, 400);
+  }
 
+  async function showVincularPagoStep() {
+    clearInteractiveElements();
+    setCurrentStep('reg_link_pay_step');
     await typeMessage(
       'bot',
-      `🔐 Este vehículo ya tiene un usuario principal.\n\nPor favor, ingresa el código de verificación enviado al usuario principal al celular ${formData.phone} del vehículo de placa ${formData.plate}.`,
-      1200
+      'Para hacerte las cosas aún más fáciles, registra un medio de pago para que nunca tengas que hacer fila para pagar el estacionamiento.',
+      900
     );
-
-    setIsWaitingForInput(true); // habilita el input para que escriba el código
-    return;
-  }
-
-  // (Opcional) Para otras placas, usa el comportamiento normal (éxito)
-  setCurrentStep('registration_success');
-  await typeMessage(
-    'bot',
-    `🎉 ¡Felicitaciones ${formData.name}! Tu registro ha sido completado exitosamente.`,
-    1000
-  );
-}, 1800);
+    setTimeout(() => {
+      const linkAction = simulation === 'registro_externo' ? 'vincular_desde_pago' : 'vincular_desde_registro';
+      const skipAction = simulation === 'registro_externo' ? 'volver_inicio' : 'done';
+      addButtonGroup([
+        { label: 'Conoce Zybo', action: 'open_slider_payment', variant: 'secondary' },
+        { label: 'Vincular medio de pago', action: linkAction },
+        { label: 'Lo haré después', action: skipAction, variant: 'secondary' },
+      ]);
+    }, 400);
   }
 
 
@@ -662,7 +690,6 @@ export default function App() {
 
 async function handleOwnerOtp(value: string) {
   setIsWaitingForInput(false);
-  
 
   // Código demo válido
   if (value.trim() === '1234') {
@@ -674,18 +701,14 @@ async function handleOwnerOtp(value: string) {
       1200
     );
 
-    // 👇 AQUÍ lanzamos el mensaje y flow de vincular medios de pago
     setTimeout(async () => {
+      const nombre = registeredName || '';
       await typeMessage(
         'bot',
-        `🎉 ¡Felicitaciones ! Tu registro ha sido completado exitosamente.\n\n Para pagar automaticamente sin pasar por cajeros evitando uso de efectivo, vincula tus datos de pago`,
+        `🎉 ¡Felicitaciones${nombre ? ' ' + nombre : ''}! Ahora eres parte de Zybo.\n\nAhora podrás pagar sin filas tu parqueadero y disfrutar de otros beneficios exclusivos de Zybo.`,
         1000
       );
-
-      addButtonGroup([
-        { label: '💳 Vincular Medio De Pago', action: 'vincular_desde_registro' },
-        { label: 'Lo haré después', action: 'done', variant: 'secondary' }
-      ]);
+      setTimeout(() => showInviteUsersStep(), 600);
     }, 600);
 
   } else {
@@ -694,7 +717,6 @@ async function handleOwnerOtp(value: string) {
       '❌ El código no es válido. Por favor intenta nuevamente.',
       800
     );
-
     setIsWaitingForInput(true);
   }
 }
@@ -1172,6 +1194,36 @@ async function handleOwnerOtp(value: string) {
         setIsFormOpen(true);
         break;
 
+      case 'open_slider_welcome':
+      case 'open_slider_invite':
+      case 'open_slider_payment':
+        clearInteractiveElements();
+        addMessage('user', 'Conoce Zybo');
+        setTimeout(async () => {
+          await typeMessage('bot', '🚧 El slider informativo "Conoce Zybo" estará disponible próximamente.', 700);
+          if (action === 'open_slider_invite') {
+            setTimeout(() => showInviteUsersStep(), 500);
+          } else if (action === 'open_slider_payment') {
+            setTimeout(() => showVincularPagoStep(), 500);
+          } else {
+            setTimeout(() => addButtonGroup([{ label: 'Registrarme', action: 'open_form' }]), 500);
+          }
+        }, 300);
+        break;
+
+      case 'invite_users_open':
+        clearInteractiveElements();
+        addMessage('user', 'Invitar usuarios');
+        setIsInviteModalOpen(true);
+        setCurrentStep('reg_invite_modal_open');
+        break;
+
+      case 'skip_invite_users':
+        clearInteractiveElements();
+        addMessage('user', 'Lo haré después');
+        setTimeout(() => showVincularPagoStep(), 400);
+        break;
+
       case 'vincular_desde_registro':
         clearInteractiveElements();
         addMessage('user', '💳 Vincular Medio De Pago');
@@ -1598,6 +1650,14 @@ async function handleOwnerOtp(value: string) {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleFormSubmit}
+      />
+
+      <InviteUsersModal
+        isOpen={isInviteModalOpen}
+        ownerName={registeredName}
+        plate={registeredPlate}
+        onClose={() => setIsInviteModalOpen(false)}
+        onSubmit={handleInviteUsersSubmit}
       />
 
       <div className="min-h-screen bg-gray-300 flex flex-col items-center justify-start py-8 px-4">
