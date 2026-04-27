@@ -745,7 +745,7 @@ async function handleOwnerOtp(value: string) {
     await new Promise(resolve => setTimeout(resolve, 600));
     addImageMessage('https://i.postimg.cc/FRP58ZWW/atlantis.jpg');
     await typeMessage('bot',
-      `👋 ¡Hola Andres! Bienvenido a ${userData.parkingName}.\n\nRegistramos tu ingreso al parqueadero a las ${userData.entryTime}.\n\nElige una opción para continuar 👇`,
+      `👋 ¡Hola Andres! Bienvenido a ${userData.parkingName}.\nRegistramos tu ingreso al parqueadero a las ${userData.entryTime}.\n\nElige una opción para continuar 👇`,
       1200
     );
     setTimeout(() => {
