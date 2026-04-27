@@ -316,8 +316,8 @@ export default function App() {
     setTimeout(() => {
       setCurrentStep('show_form_cta');
       addButtonGroup([
-        { label: 'Registrarme', action: 'open_form' },
-        { label: 'Conoce Zybo', action: 'open_slider_welcome', variant: 'secondary' },
+        { label: 'REGISTRARME AHORA', action: 'open_form' },
+        { label: 'Conocer Zybo', action: 'open_slider_welcome', variant: 'secondary' },
       ]);
     }, 1200);
   }
