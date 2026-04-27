@@ -90,11 +90,9 @@ export function FormModal({ isOpen, onClose, onSubmit }: FormModalProps) {
             <h2 className="text-lg font-semibold leading-tight">
               {step === 1 ? 'Formulario de registro Zybo' : 'Términos y Condiciones'}
             </h2>
-            <p className="text-xs text-green-200 mt-0.5">
-              {step === 1
-                ? 'Con este registro puedes disfrutar de Zybo en los principales centros comerciales del país.'
-                : 'Acepta para finalizar tu registro.'}
-            </p>
+            {step === 2 && (
+              <p className="text-xs text-green-200 mt-0.5">Acepta para finalizar tu registro.</p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -108,11 +106,15 @@ export function FormModal({ isOpen, onClose, onSubmit }: FormModalProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {step === 1 ? (
             <>
+              <h2 className="text-base font-semibold text-gray-900 leading-snug">
+                Con este registro puedes disfrutar de Zybo en los principales centros comerciales del país.
+              </h2>
+
               {/* Sección: Tus datos */}
               <div>
-                <h3 className="text-sm font-semibold text-[#075e54] uppercase tracking-wide mb-3">
+                <h2 className="text-base font-semibold text-gray-900 mb-3">
                   Tus datos
-                </h3>
+                </h2>
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -163,9 +165,9 @@ export function FormModal({ isOpen, onClose, onSubmit }: FormModalProps) {
 
               {/* Sección: Datos del propietario */}
               <div>
-                <h3 className="text-sm font-semibold text-[#075e54] uppercase tracking-wide mb-3">
+                <h2 className="text-base font-semibold text-gray-900 mb-3">
                   Datos del propietario
-                </h3>
+                </h2>
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">

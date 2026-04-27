@@ -272,8 +272,8 @@ export default function App() {
     setTimeout(() => {
       setCurrentStep('show_form_cta');
       addButtonGroup([
-        { label: 'Conoce Zybo', action: 'open_slider_welcome', variant: 'secondary' },
         { label: 'Registrarme', action: 'open_form' },
+        { label: 'Conoce Zybo', action: 'open_slider_welcome', variant: 'secondary' },
       ]);
     }, 1200);
   }
@@ -316,8 +316,8 @@ export default function App() {
     setTimeout(() => {
       setCurrentStep('show_form_cta');
       addButtonGroup([
-        { label: 'Conoce Zybo', action: 'open_slider_welcome', variant: 'secondary' },
         { label: 'Registrarme', action: 'open_form' },
+        { label: 'Conoce Zybo', action: 'open_slider_welcome', variant: 'secondary' },
       ]);
     }, 1200);
   }
@@ -403,7 +403,6 @@ export default function App() {
     );
     setTimeout(() => {
       addButtonGroup([
-        { label: 'Conoce Zybo', action: 'open_slider_invite', variant: 'secondary' },
         { label: 'Invitar usuarios', action: 'invite_users_open' },
         { label: 'Lo haré después', action: 'skip_invite_users', variant: 'secondary' },
       ]);
