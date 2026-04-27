@@ -434,7 +434,6 @@ export default function App() {
       const linkAction = simulation === 'registro_externo' ? 'vincular_desde_pago' : 'vincular_desde_registro';
       const skipAction = simulation === 'registro_externo' ? 'volver_inicio' : 'done';
       addButtonGroup([
-        { label: 'Conoce Zybo', action: 'open_slider_payment', variant: 'secondary' },
         { label: 'Vincular medio de pago', action: linkAction },
         { label: 'Lo haré después', action: skipAction, variant: 'secondary' },
       ]);
