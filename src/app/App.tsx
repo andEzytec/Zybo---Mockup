@@ -266,7 +266,7 @@ export default function App() {
     setCurrentStep('welcome');
     await typeMessage('user', 'Quiero registrarme', 600);
     await typeMessage('bot',
-      `Hola 👋\nSoy Zybo 🚗, tu asistente de movilidad y pago de parqueadero.\n\nRegístrate para hacer más fácil tu experiencia de parqueo, ganar tiempo y acceder a beneficios exclusivos en los principales centros comerciales del país.`,
+      `Hola 👋\nSoy Zybo, tu asistente de movilidad y pago de parqueadero.\n\nCon este registro puedes disfrutar de Zybo en los principales centros comerciales del país.\n\nRegístrate para hacer más fácil tu experiencia de parqueo, ganar tiempo y acceder a beneficios exclusivos en los principales centros comerciales del país.`,
       1200
     );
     setTimeout(() => {
@@ -310,7 +310,7 @@ export default function App() {
     // Mensaje de campaña/QR externo
     await typeMessage('user', 'Quiero registrarme', 600);
     await typeMessage('bot',
-      `Hola 👋\nSoy Zybo 🚗, tu asistente de movilidad y pago de parqueadero.\n\nRegístrate para hacer más fácil tu experiencia de parqueo, ganar tiempo y acceder a beneficios exclusivos en los principales centros comerciales del país.`,
+      `Hola 👋\nSoy Zybo, tu asistente de movilidad y pago de parqueadero.\n\nCon este registro puedes disfrutar de Zybo en los principales centros comerciales del país.\n\nRegístrate para hacer más fácil tu experiencia de parqueo, ganar tiempo y acceder a beneficios exclusivos en los principales centros comerciales del país.`,
       1200
     );
     setTimeout(() => {
