@@ -91,7 +91,7 @@ export function FormModal({ isOpen, onClose, onSubmit }: FormModalProps) {
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <h2 className="text-base font-semibold text-gray-900 leading-snug">
-            Con este registro puedes disfrutar de Zybo en los principales centros comerciales del país.
+            llena estos datos para disfrutarde Zybo en los principales centro comerciales del país.
           </h2>
 
           {/* Sección: Tus datos */}
@@ -142,6 +142,19 @@ export function FormModal({ isOpen, onClose, onSubmit }: FormModalProps) {
                   placeholder="Ej: ABC123"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Correo electrónico <span className="text-gray-400">(opcional)</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25d366] focus:border-transparent outline-none"
+                  placeholder="Para facturación electrónica"
+                />
+              </div>
             </div>
           </div>
 
@@ -182,19 +195,6 @@ export function FormModal({ isOpen, onClose, onSubmit }: FormModalProps) {
                   placeholder="Solo números"
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Correo electrónico <span className="text-gray-400">(opcional)</span>
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#25d366] focus:border-transparent outline-none"
-                  placeholder="Para facturación electrónica"
-                />
-              </div>
             </div>
           </div>
 
@@ -211,7 +211,7 @@ export function FormModal({ isOpen, onClose, onSubmit }: FormModalProps) {
                 className="w-5 h-5 mt-0.5 text-[#25d366] bg-gray-100 border-gray-300 rounded focus:ring-[#25d366] focus:ring-2 flex-shrink-0"
               />
               <label htmlFor="terms" className="text-sm text-gray-700 cursor-pointer leading-snug">
-                He leído y acepto los Términos y Condiciones de Zybo. Link:{' '}
+                He leído y acepto los Términos y Condiciones de Zybo. Que se encuentra en:{' '}
                 <a
                   href="https://zybo.co/tyc/zybo260223.pdf"
                   target="_blank"
@@ -233,7 +233,7 @@ export function FormModal({ isOpen, onClose, onSubmit }: FormModalProps) {
               />
               <label htmlFor="dataPolicy" className="text-sm text-gray-700 cursor-pointer leading-snug">
                 Autorizo a E-Global Technology S.A.S. el tratamiento de mis datos personales,
-                conforme a la Política de Tratamiento de Datos Personales. Link:{' '}
+                conforme a su política. que se ecuntra en:{' '}
                 <a
                   href="https://zybo.co/wp-content/uploads/2025/07/Politica-Tratamiento-de-Datos-Personales-Egobaltechnologysas.pdf"
                   target="_blank"
