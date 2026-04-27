@@ -257,7 +257,7 @@ export function FormModal({ isOpen, onClose, onSubmit }: FormModalProps) {
                   : 'bg-[#075e54] text-white hover:bg-[#054c44]'
               }`}
             >
-              {isSubmitting ? 'Enviando...' : 'Registrarme'}
+              {isSubmitting ? 'ENVIANDO...' : 'REGISTRARME AHORA'}
             </button>
           </div>
         </form>
