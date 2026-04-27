@@ -233,7 +233,7 @@ export function FormModal({ isOpen, onClose, onSubmit }: FormModalProps) {
               />
               <label htmlFor="dataPolicy" className="text-sm text-gray-700 cursor-pointer leading-snug">
                 Autorizo a E-Global Technology S.A.S. el tratamiento de mis datos personales,
-                conforme a su política. que se ecuntra en:{' '}
+                conforme a su política. que se encuentra en:{' '}
                 <a
                   href="https://zybo.co/wp-content/uploads/2025/07/Politica-Tratamiento-de-Datos-Personales-Egobaltechnologysas.pdf"
                   target="_blank"
