@@ -163,7 +163,7 @@ export function FormModal({ isOpen, onClose, onSubmit }: FormModalProps) {
           {/* Sección: Datos del propietario */}
           <div>
             <h2 className="text-base font-semibold text-gray-900 mb-3">
-              Datos del propietario
+              Datos del propietario del vehículo
             </h2>
             <div className="space-y-3">
               <div>
