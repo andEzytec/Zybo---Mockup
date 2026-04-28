@@ -515,7 +515,7 @@ export default function App() {
     );
     setTimeout(() => {
       addButtonGroup([
-        { label: 'Pagar', action: 'pol_pay' },
+        { label: 'Pagar ahora', action: 'pol_pay' },
         { label: 'Cambiar la cédula', action: 'done', variant: 'secondary' }
       ]);
     }, 100);
@@ -531,7 +531,7 @@ export default function App() {
     );
     setTimeout(() => {
       addButtonGroup([
-        { label: 'Pagar', action: 'pol_pay_nequi' },
+        { label: 'Pagar ahora', action: 'pol_pay_nequi' },
         { label: 'Cambiar la cédula', action: 'done', variant: 'secondary' }
       ]);
     }, 100);
@@ -751,7 +751,7 @@ async function handleOwnerOtp(value: string) {
     setTimeout(() => {
       setCurrentStep('ep_menu');
       addButtonGroup([
-        { label: 'Pagar', action: 'ep_pagar' },
+        { label: 'Pagar ahora', action: 'ep_pagar' },
         { label: 'Tiquete de parqueadero', action: 'ep_tiquete' },
         { label: 'Más opciones', action: 'ep_mas_opciones' },
       ]);
