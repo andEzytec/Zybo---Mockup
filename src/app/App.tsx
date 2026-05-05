@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
-import { ChatButtonGroup } from './components/ChatButtonGroup';
-import { MenuList } from './components/MenuList';
-import { PaymentSelector } from './components/PaymentSelector';
 import { FormModal, FormData } from './components/FormModal';
 import { BottomSheet } from './components/BottomSheet';
 import { InviteUsersModal } from './components/InviteUsersModal';
-import { Phone, Video, MoreVertical, RefreshCw } from 'lucide-react';
 import { LandingWebScreen } from './components/LandingWeb';
+import { SimulationSelector } from './components/SimulationSelector';
+import { HomeScreen } from './components/HomeScreen';
+import { WhatsAppHeader } from './components/WhatsAppHeader';
+import { ChatStream } from './components/ChatStream';
 import {
   ActiveSheet,
   FlowStep,
@@ -1447,41 +1446,6 @@ async function handleOwnerOtp(value: string) {
     else if (currentStep === 'mc_usr_invite_name_wait') handleInviteNameInput(value);
   }
 
-  const simLabels: Record<SimulationType, { label: string; icon: string; color: string; active: string }> = {
-    registro: {
-      label: 'Registro',
-      icon: '📝',
-      color: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
-      active: 'bg-blue-600 text-white'
-    },
-    entrada_parqueo: {
-      label: 'Entrada',
-      icon: '🚗',
-      color: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
-      active: 'bg-orange-600 text-white'
-    },
-
-    registro_externo: {
-      label: 'Registro Externo',
-      icon: '🔗',
-      color: 'bg-purple-100 text-purple-700 hover:bg-purple-200',
-      active: 'bg-purple-600 text-white'
-    },
-
-    landing_web: {
-      label: 'Registro Web',
-      icon: '🌐',
-      color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200',
-      active: 'bg-indigo-600 text-white'
-    },
-    usuario_referido: {
-      label: 'Usuario referido',
-      icon: '🎁',
-      color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200',
-      active: 'bg-emerald-600 text-white'
-    }
-  };
-
   const isLanding = simulation === 'landing_web';
 
   return (
@@ -1501,43 +1465,14 @@ async function handleOwnerOtp(value: string) {
       />
 
       <div className="min-h-screen bg-gray-300 flex flex-col items-center justify-start py-8 px-4">
-        {/* Selector superior de escenarios */}
-        <div className="w-full max-w-[300px] mb-4">
-          <p className="text-gray-600 text-xs font-semibold mb-2 uppercase tracking-wide text-center">
-            🔧 Escenario de simulación
-          </p>
-
-          <div className="flex gap-2 justify-center flex-wrap">
-            {(Object.keys(simLabels) as SimulationType[]).map(sim => {
-              const s = simLabels[sim];
-              const isActive = simulation === sim;
-              return (
-                <button
-                  key={sim}
-                  onClick={() => selectSimulation(sim)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all shadow-sm ${isActive ? s.active : s.color
-                    }`}
-                >
-                  <span>{s.icon}</span>
-                  <span>{s.label}</span>
-                </button>
-              );
-            })}
-
-            {simulation && (
-              <button
-                onClick={() => {
-                  resetChat();
-                  setSimulation(null);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-700 text-white hover:bg-gray-800 transition-all shadow-sm"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Reiniciar</span>
-              </button>
-            )}
-          </div>
-        </div>
+        <SimulationSelector
+          simulation={simulation}
+          onSelect={selectSimulation}
+          onReset={() => {
+            resetChat();
+            setSimulation(null);
+          }}
+        />
 
         {/* Marco del teléfono */}
         <div className="w-[390px] h-[820px] bg-[#e5ddd5] rounded-[40px] overflow-hidden shadow-2xl border-[6px] border-gray-800 flex flex-col relative">
@@ -1547,65 +1482,14 @@ async function handleOwnerOtp(value: string) {
           </div>
 
           {/* Header estilo WhatsApp SOLO si NO es landing */}
-          {!isLanding && (
-            <div className="bg-[#075e54] text-white px-4 py-2 flex items-center justify-between shadow-md flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-full overflow-hidden">
-                  <img
-                    src="https://i.postimg.cc/wjQcWtMT/logo-Zybo-Whatsapp-jpg.jpg"
-                    alt="Zybo"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <div className="font-semibold text-sm">Zybo</div>
-                  <div className="text-xs text-green-200">en línea</div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Video className="w-4 h-4 cursor-pointer hover:opacity-80" />
-                <Phone className="w-4 h-4 cursor-pointer hover:opacity-80" />
-                <MoreVertical className="w-4 h-4 cursor-pointer hover:opacity-80" />
-              </div>
-            </div>
-          )}
+          {!isLanding && <WhatsAppHeader />}
 
           {/* Contenido principal: HOME (sin simulation) | LANDING | CHAT */}
           <div className={`flex-1 ${simulation && !isLanding ? "overflow-y-auto px-3 py-3" : ""}`}>
-            {/* HOME dentro del marco (cuando no hay simulación seleccionada) */}
             {!simulation && !isLanding && (
-              <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                <div className="w-50 h-20 rounded-full overflow-hidden">
-                  <img
-                    src="https://i.postimg.cc/NG2q2tCm/Zybo-logo-hor-morado-amarillo.png"
-                    alt="Zybo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-
-                <h2 className="text-base font-bold text-[#075e54] mb-1">Zybo — Simulador</h2>
-                <p className="text-gray-500 text-xs">Selecciona un escenario para comenzar.</p>
-
-                <div className="mt-5 flex flex-col gap-2 w-full">
-                  {(Object.keys(simLabels) as SimulationType[]).map(sim => {
-                    const s = simLabels[sim];
-                    return (
-                      <button
-                        key={sim}
-                        onClick={() => selectSimulation(sim)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl shadow text-[#075e54] font-semibold text-sm hover:bg-[#075e54] hover:text-white transition-all border border-gray-200"
-                      >
-                        <span>{s.icon}</span>
-                        <span>{s.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <HomeScreen onSelect={selectSimulation} />
             )}
 
-            {/* LANDING dentro del marco */}
             {isLanding && (
               <LandingWebScreen
                 onBack={() => {
@@ -1615,94 +1499,18 @@ async function handleOwnerOtp(value: string) {
               />
             )}
 
-            {/* CHAT dentro del marco */}
             {simulation && !isLanding && (
-              <>
-                {messages.map(message =>
-                  message.imageUrl ? (
-                    <div
-                      key={message.id}
-                      className="flex justify-start mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
-                    >
-                      <div className="max-w-[85%] rounded-lg overflow-hidden shadow-sm bg-white">
-                        <img
-                          src={message.imageUrl}
-                          alt="Centro comercial"
-                          className="w-full h-72 object-cover"
-                        />
-                        {message.timestamp && (
-                          <div className="text-[11px] text-gray-400 px-2 py-1 text-right">
-                            {message.timestamp}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <ChatMessage
-                      key={message.id}
-                      type={message.type}
-                      content={message.content}
-                      timestamp={message.timestamp}
-                    />
-                  )
-                )}
-
-                {buttonGroups.map(group => (
-                  <ChatButtonGroup
-                    key={group.id}
-                    buttons={group.buttons.map(btn => ({
-                      ...btn,
-                      onClick: () => handleAction(btn.action),
-                    }))}
-                  />
-                ))}
-
-                {menuLists.map(menu => (
-                  <MenuList
-                    key={menu.id}
-                    title={menu.title}
-                    options={menu.options}
-                    onOptionClick={handleAction}
-                    onOpenSheet={openSheet}
-                  />
-                ))}
-
-                {paymentSelectors.map(selector => (
-                  <PaymentSelector
-                    key={selector.id}
-                    showAutomatic={selector.showAutomatic}
-                    variant={selector.variant}
-                    onSelect={handlePaymentSelectorClick}
-                    onOpenSheet={openSheet}
-                  />
-                ))}
-
-                {isTyping && (
-                  <div className="flex justify-start mb-3">
-                    <div className="bg-white px-4 py-3 rounded-lg rounded-tl-none shadow-sm">
-                      <div className="flex gap-1">
-                        <div
-                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "0ms" }}
-                        />
-                        <div
-                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "150ms" }}
-                        />
-                        <div
-                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "300ms" }}
-                        />
-                      </div>
-
-
-                    </div>
-
-                  </div>
-                )}
-
-                <div ref={messagesEndRef} />
-              </>
+              <ChatStream
+                messages={messages}
+                buttonGroups={buttonGroups}
+                menuLists={menuLists}
+                paymentSelectors={paymentSelectors}
+                isTyping={isTyping}
+                onAction={handleAction}
+                onPaymentSelect={handlePaymentSelectorClick}
+                onOpenSheet={openSheet}
+                messagesEndRef={messagesEndRef}
+              />
             )}
           </div>
 
