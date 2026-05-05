@@ -11,30 +11,40 @@ import { Phone, Video, MoreVertical, RefreshCw } from 'lucide-react';
 import { LandingWebScreen } from './components/LandingWeb';
 import {
   ActiveSheet,
-  ButtonGroupType,
   FlowStep,
   LandingFormData,
-  MenuListType,
-  MessageType,
-  PaymentSelectorType,
   ROLE_LABEL,
   SimulationType,
   UserEntry,
   Vehicle,
 } from './types';
+import { useChatState } from './hooks/useChatState';
+import { useTooltip } from './hooks/useTooltip';
 
 
 
 export default function App() {
+  const {
+    messages,
+    buttonGroups,
+    menuLists,
+    paymentSelectors,
+    isTyping,
+    addMessage,
+    addImageMessage,
+    addButtonGroup,
+    addMenuList,
+    addPaymentSelector,
+    clearInteractiveElements,
+    typeMessage,
+    resetChatState,
+  } = useChatState();
+  const { tooltip, showTooltip } = useTooltip();
+
   const [simulation, setSimulation] = useState<SimulationType | null>(null);
-  const [messages, setMessages] = useState<MessageType[]>([]);
-  const [buttonGroups, setButtonGroups] = useState<ButtonGroupType[]>([]);
-  const [menuLists, setMenuLists] = useState<MenuListType[]>([]);
-  const [paymentSelectors, setPaymentSelectors] = useState<PaymentSelectorType[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [currentStep, setCurrentStep] = useState<FlowStep>('idle');
   const [isWaitingForInput, setIsWaitingForInput] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [showLanding, setShowLanding] = useState(false);
   const [landingSubmitted, setLandingSubmitted] = useState(false);
@@ -94,65 +104,11 @@ export default function App() {
     scrollToBottom();
   }, [messages, buttonGroups, menuLists, paymentSelectors, isTyping]);
 
-  function getCurrentTime() {
-    const now = new Date();
-    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-  }
-
-  function addMessage(type: 'bot' | 'user', content: string, imageUrl?: string) {
-    setMessages(prev => [...prev, {
-      id: Date.now().toString() + Math.random(),
-      type, content, imageUrl,
-      timestamp: getCurrentTime()
-    }]);
-  }
-
-  function addImageMessage(imageUrl: string) {
-    setMessages(prev => [...prev, {
-      id: Date.now().toString() + Math.random(),
-      type: 'bot',
-      content: '',
-      imageUrl,
-      timestamp: getCurrentTime()
-    }]);
-  }
-
-  function addButtonGroup(buttons: Array<{ label: any; action: string; variant?: 'primary' | 'secondary' }>) {
-    setButtonGroups(prev => [...prev, { id: Date.now().toString() + Math.random(), buttons }]);
-  }
-
-  function addMenuList(title: string | undefined, options: Array<{ id: string; label: string; action: string; description?: string }>) {
-    setMenuLists(prev => [...prev, { id: Date.now().toString() + Math.random(), title, options }]);
-  }
-
-  function addPaymentSelector(showAutomatic: boolean, variant?: 'pay' | 'link' | 'autodebit') {
-    setPaymentSelectors(prev => [...prev, { id: Date.now().toString() + Math.random(), showAutomatic, variant }]);
-  }
-
-  function clearInteractiveElements() {
-    setButtonGroups([]);
-    setMenuLists([]);
-    setPaymentSelectors([]);
-  }
-
-  async function typeMessage(type: 'bot' | 'user', content: string, delay = 800) {
-    if (type === 'bot') {
-      setIsTyping(true);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      setIsTyping(false);
-    }
-    addMessage(type, content);
-  }
-
   function resetChat() {
-    setMessages([]);
-    setButtonGroups([]);
-    setMenuLists([]);
-    setPaymentSelectors([]);
+    resetChatState();
     setInputValue('');
     setCurrentStep('idle');
     setIsWaitingForInput(false);
-    setIsTyping(false);
     setIsFormOpen(false);
   }
 
@@ -556,13 +512,6 @@ export default function App() {
       );
       setIsWaitingForInput(true);
     }
-  }
-
-  const [tooltip, setTooltip] = useState<{ text: string; visible: boolean }>({ text: '', visible: false });
-
-  function showTooltip(text: string, duration = 4000) {
-    setTooltip({ text, visible: true });
-    setTimeout(() => setTooltip({ text: '', visible: false }), duration);
   }
 
   async function handlePuntosColombiaSelected() {
